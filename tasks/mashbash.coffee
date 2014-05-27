@@ -20,7 +20,10 @@ module.exports = (grunt) ->
   projectBase = Path.basename(projectRoot)
 
   # Include MashBash
-  MashBash = require('../lib/mashbash')
+  MashBash = require('../lib/mash')
+    .setProjectRoot(projectRoot)
+    .setProjectBase(projectBase)
+    .setGrunt(grunt)
 
   # Include Grunt Task Helper
   GruntTaskHelper = require('../lib/grunt/task_helper')
@@ -35,13 +38,16 @@ module.exports = (grunt) ->
     options = this.options
       # Project
       buildDir: 'dist'
-      sourceDir: 'source'
       # Generic
       pretty: true
       debug: false
+
+    # Read the source files with Grunt
+    options.gruntReadSourceFiles = true
 
     # Create a new Task Helper
     task = new GruntTaskHelper(@, options)
 
     # Start processing files
-    task.forFiles 'mash', (file, dest) -> MashBash.parseFile(file, options)
+    task.forFiles 'mash', (file, dest) ->
+      MashBash.parseData(file.data, options)

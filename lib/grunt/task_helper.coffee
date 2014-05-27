@@ -6,10 +6,14 @@
 'use strict'
 
 # Required Lib.
-Chalk        = require('chalk')
+Chalk = require('chalk')
 
 # Local Lib.
-File         = require('../file')
+File = require('../file')
+
+# String Repeat
+String.prototype.repeat = (x, y) ->
+    new Array((x * (y || 1)) + 1).join(@)
 
 module.exports = class GruntTaskHelper
   @setProjectRoot: (@projectRoot) -> @
@@ -52,9 +56,12 @@ module.exports = class GruntTaskHelper
           type: File.type(filepath)
           name: File.fullname(filepath)
           path: File.resolve(filepath)
-          data: $._.grunt.file.read(filepath)
 
-        # Source File path relative to the project root
+        # Source File Data
+        if $.options.gruntReadSourceFiles || false
+          file.data = $._.grunt.file.read(filepath)
+
+        # Source File Path relative to the project root
         file.relative =
           File.relative($._.projectRoot, file.path)
 
