@@ -6,33 +6,8 @@
 'use strict'
 
 module.exports = (grunt) ->
-
-  # Node Lib.
-  Path = require('path')
-
-  # Internal lib.
-  Chalk = require('chalk')
-  Merge = require('coffee-script').helpers.merge
-  Extend = require('coffee-script').helpers.extend
-
-  # Variables
-  projectRoot = process.cwd()
-  projectBase = Path.basename(projectRoot)
-
-  # Include MashBash
-  MashBash = require('../lib/mash')
-    .setProjectRoot(projectRoot)
-    .setProjectBase(projectBase)
-    .setGrunt(grunt)
-
-  # Include Grunt Task Helper
-  GruntTaskHelper = require('../lib/grunt/task_helper')
-    .setProjectRoot(projectRoot)
-    .setProjectBase(projectBase)
-    .setGrunt(grunt)
-
-  # Include custom file utilities
-  File = require('../lib/file')
+  Tusk = require('grunt-tusks').init grunt, ->
+    @MashBash = require('../lib/mashbash')
 
   grunt.registerMultiTask 'mashbash', 'Mash Bash together until it works', ->
     options = this.options
@@ -46,8 +21,8 @@ module.exports = (grunt) ->
     options.gruntReadSourceFiles = true
 
     # Create a new Task Helper
-    task = new GruntTaskHelper(@, options)
+    tusk = new Tusk(@, options)
 
     # Start processing files
-    task.forFiles 'mash', (file, dest) ->
-      MashBash.parseData(file.data, options)
+    tusk.forFiles 'mash', (file, dest) ->
+      @MashBash.parseData(file.data, options)

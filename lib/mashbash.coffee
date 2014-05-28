@@ -9,18 +9,11 @@
 Path = require('path')
 Fs   = require('fs')
 
-# Local Lib.
-File = require('./file')
-
 # String Repeat
 String.prototype.repeat = (x, y) ->
   new Array((x * (y || 1)) + 1).join(@)
 
 module.exports = class MashBash
-  @setProjectRoot: (@projectRoot) -> @
-  @setProjectBase: (@projectBase) -> @
-  @setGrunt: (@grunt) -> @
-
 
   @parseFile: (file, options) ->
     if data = File.read(file)
@@ -36,7 +29,11 @@ module.exports = class MashBash
     @_ = @constructor
 
 
-  output: []
+  indent:  0
+  tabSize: null
+
+  plugins: {}
+  output:  []
 
 
   parse: ->
@@ -50,7 +47,16 @@ module.exports = class MashBash
         lineNumber: parseInt(index) + 1
         isCommand:  !! matchLine[3]
         lineData:   matchLine[2]
-        tabSize:    matchLine[1].length
+
+      # Determine tab size and indentation
+      if ! @tabSize && matchLine[1].length > 0
+        @tabSize ||= matchLine[1].length
+        indent = 1 # First indent is indent of 1
+      else indent = matchLine[1].length / @tabSize
+
+      # Add tab size and indentation to the parsedLine
+      parsedLine.tabSize = @tabSize
+      parsedLine.indent  = indent
 
       # Commands to run
       if matchLine[4]
@@ -63,11 +69,24 @@ module.exports = class MashBash
         parsedLine.arguments  = matchCmnd[3] && matchCmnd[3].split(" ")
         parsedLine.invocation = matchLine[3]
 
-        # Run commands if needed
-        parsedLine.lineData = @invoke(parsedLine)
+      # If the indent changed then invoke a callback
+      try
+        if indent < @indent
+          @invoke('line:indent:down', parsedLine)
+        else if indent > @indent
+          @invoke('line:indent:up', parsedLine)
+      catch e
+        console.error(e)
+      finally
+        @indent = indent
 
-      @output.push(" ".repeat(parsedLine.tabSize).concat(parsedLine.lineData))
+      # Run a command on the line if needed
+      if parsedLine.isCommand
+        try
+          @invoke('line:command', parsedLine)
+        catch e
+          console.error(e)
 
-
+      @cache.push(parsedLine.lineData)
 
     @output.join("\n")
